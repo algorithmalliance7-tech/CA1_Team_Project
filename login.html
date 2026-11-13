@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5ef">
+  <title>Sign in · Farm2Door</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body{min-height:100vh;display:grid;place-items:center;padding:24px}
+    .login-page{width:min(440px,100%);background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px;box-shadow:var(--shadow)}
+    .login-brand{display:flex;align-items:center;gap:10px;margin-bottom:26px;color:var(--ink);font:800 17px Manrope,sans-serif}
+    .login-page h1{font:700 28px Manrope,sans-serif;margin:0 0 8px}
+    .login-page .intro{font-size:13px;line-height:1.6;color:var(--muted);margin:0 0 22px}
+    .login-page .field{margin:14px 0}
+    .login-page .field label{font-size:11px}
+    .login-page .field input{font-size:14px;padding:13px}
+    .portal-choice{display:flex;gap:9px;margin:0 0 15px}.portal-choice label{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);border-radius:9px;padding:11px;background:#fbfcf8;color:#536258;font-size:12px;font-weight:700;cursor:pointer}.portal-choice label:has(input:checked){border-color:#80a98c;background:#edf4eb;color:var(--green)}.portal-choice input{accent-color:var(--green)}
+    .login-page .primary{width:100%;font-size:14px;margin-top:5px}
+    .login-page .error{display:none;color:#a34132;background:#fff0eb;border-radius:9px;padding:11px;font-size:12px;margin:12px 0}
+    .login-page .error.show{display:block}
+    .login-page .foot{font-size:12px;color:var(--muted);text-align:center;margin-top:20px}
+    .login-page a{color:var(--green);font-weight:700}
+    .profile-card{display:none}
+  </style>
+</head>
+<body>
+  <main class="login-page">
+    <a class="brand login-brand" href="index.html"><span class="brand-mark">🌱</span><span>Farm2Door<small>GROW LOCAL · SHOP LOCAL</small></span></a>
+    <section id="signInPanel">
+      <p class="eyebrow">WELCOME BACK</p>
+      <h1>Sign in</h1>
+      <p class="intro">Sign in with the email address and password saved on your account to shop your neighborhood market or manage your farm store.</p>
+      <form id="signInForm">
+        <fieldset class="portal-choice" aria-label="Choose sign-in portal" style="border:0;padding:0"><label><input type="radio" name="portal" value="customer" checked> Customer</label><label><input type="radio" name="portal" value="vendor"> Vendor</label></fieldset>
+        <div class="field"><label for="email">EMAIL ADDRESS</label><input id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com"></div>
+        <div class="field"><label for="password">FARM2DOOR ACCOUNT PASSWORD</label><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Password created for Farm2Door"></div>
+        <div class="error" id="signInError" role="alert">We couldn’t find an account with that email and password for the selected portal.</div>
+        <button class="primary" type="submit">Sign in</button>
+      </form>
+      <p class="foot">New to the market? <a href="index.html#create-account">Create an account</a></p>
+    </section>
+    <section id="profilePanel" class="profile-card">
+      <p class="eyebrow">YOUR ACCOUNT</p><h1 id="profileName"></h1><p class="intro" id="profileDetails"></p>
+      <a class="primary" id="continueMarket" href="customer-dashboard.html" style="display:block;text-align:center;text-decoration:none">Continue to the market</a>
+      <button class="outline" id="signOutButton" type="button" style="width:100%;margin-top:10px">Sign out</button>
+    </section>
+  </main>
+  <script>
+    const readStored=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
+    const users=readStored('users',readStored('ng-users',[]));
+    const form=document.querySelector('#signInForm');
+    const signInPanel=document.querySelector('#signInPanel'),profilePanel=document.querySelector('#profilePanel');
+    const routeFor=user=>String(user.role).toLowerCase()==='vendor'?'vendor-dashboard.html':'customer-dashboard.html';
+    function saveSession(user){if(!user.id){user.id='u-'+Date.now();localStorage.setItem('users',JSON.stringify(users));localStorage.setItem('ng-users',JSON.stringify(users))}const signedIn={id:user.id,name:user.name,email:user.email,phone:user.phone,country:user.country,vendorName:user.vendorName,role:user.role||'Customer',address:user.address,businessIdMasked:user.businessIdMasked,accountHolder:user.accountHolder,bankName:user.bankName,accountLast4:user.accountLast4,routingLast4:user.routingLast4,payoutCountry:user.payoutCountry,payoutStatus:user.payoutStatus};localStorage.setItem('currentUser',JSON.stringify(signedIn));localStorage.setItem('ng-session',JSON.stringify(signedIn));location.href=routeFor(signedIn)}
+    function showProfile(user){signInPanel.style.display='none';profilePanel.style.display='block';document.querySelector('#profileName').textContent=user.name||'Market member';document.querySelector('#profileDetails').textContent=(user.email||'')+' · '+(user.role||'Customer');const link=document.querySelector('#continueMarket');link.href=routeFor(user);link.textContent=String(user.role).toLowerCase()==='vendor'?'Open vendor dashboard':'Open customer dashboard'}
+    const session=readStored('currentUser',readStored('ng-session',null));if(session)showProfile(session);
+    form.onsubmit=event=>{event.preventDefault();const data=new FormData(form),email=String(data.get('email')||'').trim().toLowerCase(),password=String(data.get('password')||''),portal=String(data.get('portal')||'customer'),user=users.find(item=>String(item.email||'').trim().toLowerCase()===email&&item.password===password&&String(item.role||'Customer').toLowerCase()===portal);if(!user){document.querySelector('#signInError').classList.add('show');return}saveSession(user)};
+    document.querySelector('#signOutButton').onclick=()=>{localStorage.removeItem('currentUser');localStorage.removeItem('ng-session');location.reload()};
+  </script>
+</body>
+</html>
